@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner QR Inventario</title>
+    <!-- Librería para el escáner QR -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: #333; }
+
+        /* Estilos del contenedor de la cámara */
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Estilos de la tabla */
+        .table-container {
+            width: 100%;
+            overflow-x: auto; /* Para hacer scroll en celulares */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap; /* Evita que el texto se rompa */
+        }
+
+        tr:hover { background-color: #f1f1f1; }
+
+        /* Botón de reinicio */
+        .btn-reset {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Escáner de Materiales</h1>
+    
+    <div id="reader"></div>
+
+    <div class="table-container">
+        <table id="datosTable">
+            <thead>
+                <tr>
+                    <!-- Encabezados definidos por el usuario -->
+                    <th>Id</th>
+                    <th>Fecha</th>
+                    <th>Materia P.</th>
+                    <th>Lote</th>
+                    <th>Peso</th>
+                    <th>Bodega</th>
+                    <th>Piezas</th>
+                    <th>Extra 1</th>
+                    <th>Formato</th>
+                    <th>Colada</th>
+                    <th>Extra 2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se agregarán los datos escaneados -->
+            </tbody>
+        </table>
+    </div>
+
+    <button class="btn-reset" onclick="limpiarTabla()">Limpiar Tabla</button>
+
+    <script>
+        // Sonido de confirmación (opcional)
+        const beep = new Audio('https://www.soundjay.com/button/beep-07.mp3');
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // 1. Validar si el texto contiene el separador "|"
+            if (decodedText.includes("|")) {
+                
+                // 2. Separar los datos
+                // El .map(s => s.trim()) elimina espacios en blanco al inicio y final de cada dato
+                const datos = decodedText.split('|').map(s => s.trim());
+
+                // 3. Crear una nueva fila en la tabla
+                const tableBody = document.querySelector("#datosTable tbody");
+                const newRow = document.createElement("tr");
+
+                // NOTA: Tu ejemplo de QR tiene 9 datos, pero pediste 11 columnas.
+                // Este ciclo llenará las columnas disponibles.
+                // Si faltan datos en el QR, las últimas columnas quedarán vacías.
+                
+                // Definimos las 11 columnas esperadas (ajusta este número si es necesario)
+                const totalColumnas = 11; 
+
+                for (let i = 0; i < totalColumnas; i++) {
+                    const cell = document.createElement("td");
+                    // Si existe el dato lo ponemos, si no, ponemos un guión
+                    cell.textContent = datos[i] ? datos[i] : "-";
+                    newRow.appendChild(cell);
+                }
+
+                // Agregar la fila al inicio de la tabla
+                tableBody.prepend(newRow);
+
+                // Reproducir sonido y detener escaneo brevemente para evitar duplicados rápidos
+                beep.play();
+                
+                // Opcional: Detener el escaneo tras leer uno (descomenta si lo deseas)
+                // html5QrcodeScanner.clear();
+                
+                alert("¡Dato agregado exitosamente!");
+            } else {
+                console.log("El código QR no tiene el formato correcto (|)");
+            }
+        }
+
+        function onScanFailure(error) {
+            // Se ejecuta constantemente mientras busca un QR, mejor dejarlo vacío para no saturar la consola
+            // console.warn(`Error de escaneo = ${error}`);
+        }
+
+        // Configuración del escáner
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            /* verbose= */ false
+        );
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+        function limpiarTabla() {
+            if(confirm('¿Borrar todos los datos de la tabla?')) {
+                document.querySelector("#datosTable tbody").innerHTML = "";
+            }
+        }
+    </script>
+</body>
+</html>
